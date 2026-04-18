@@ -16,6 +16,10 @@
 
 set -euo pipefail
 
+SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
+TEMPLATE_DIR="$SCRIPT_DIR/templates"
+
 print_usage() {
     cat <<'EOF'
 Usage: cds [date] [--no-launch]
@@ -28,6 +32,55 @@ Usage: cds [date] [--no-launch]
 
 Flags and date arg may appear in any order. Date format: YYYY-MM-DD.
 EOF
+}
+
+repo_exists() {
+    local dir="$1"
+
+    if [[ -e "$dir/.git" ]]; then
+        return 0
+    fi
+
+    command -v git >/dev/null 2>&1 || return 1
+    git -C "$dir" rev-parse --is-inside-work-tree >/dev/null 2>&1
+}
+
+seed_file_if_missing() {
+    local template="$1"
+    local dest="$2"
+
+    if [[ -e "$dest" ]]; then
+        return 0
+    fi
+
+    cp "$template" "$dest"
+}
+
+init_repo_if_needed() {
+    local dir="$1"
+
+    if repo_exists "$dir"; then
+        return 0
+    fi
+
+    if ! command -v git >/dev/null 2>&1; then
+        echo "ERROR: git not found on PATH" >&2
+        exit 1
+    fi
+
+    git -C "$dir" init -q
+}
+
+seed_daily_repo_files_if_needed() {
+    local dir="$1"
+
+    if [[ ! -f "$TEMPLATE_DIR/.gitignore" || ! -f "$TEMPLATE_DIR/AGENTS.md" ]]; then
+        echo "ERROR: cds templates missing in $TEMPLATE_DIR" >&2
+        exit 1
+    fi
+
+    seed_file_if_missing "$TEMPLATE_DIR/.gitignore" "$dir/.gitignore"
+    seed_file_if_missing "$TEMPLATE_DIR/AGENTS.md" "$dir/AGENTS.md"
 }
 
 # ─── Parse arguments ──────────────────────────────────────────────────────────
@@ -78,6 +131,8 @@ SCRATCH_DIR="$HOME/scratch/$DATE"
 # Under `set -e`, identical short-circuit semantics.
 
 mkdir -p "$SCRATCH_DIR"
+init_repo_if_needed "$SCRATCH_DIR"
+seed_daily_repo_files_if_needed "$SCRATCH_DIR"
 cd "$SCRATCH_DIR"
 
 if [[ -z "$NO_LAUNCH" ]]; then
