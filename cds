@@ -8,8 +8,10 @@
 #   cds 2026-01-15 --no-launch   Combined: explicit date, skip launcher
 #   cds --help | -h          Show this help
 #
-# Functional parity with the original alias:
+# Launch flow preserved from the original alias:
 #     mkdir -p ~/scratch/$(date +%Y-%m-%d) && cd ~/scratch/$(date +%Y-%m-%d) && oc
+# This command now also initializes the dated folder as a git repo and seeds
+# .gitignore + AGENTS.md from templates/ the first time each daily repo is created.
 #
 # Canonical project: https://github.com/JRedeker/cds
 # Install with: ./install.sh
@@ -126,9 +128,9 @@ fi
 DATE="${DATE:-$(date +%Y-%m-%d)}"
 SCRATCH_DIR="$HOME/scratch/$DATE"
 
-# ─── Parity-critical hot path ─────────────────────────────────────────────────
-# Original alias: mkdir -p ... && cd ... && oc
-# Under `set -e`, identical short-circuit semantics.
+# ─── Main flow ────────────────────────────────────────────────────────────────
+# mkdir -p -> init repo if needed -> seed .gitignore/AGENTS.md if missing -> cd -> exec oc.
+# Under `set -e`, any step failure aborts before later steps run.
 
 mkdir -p "$SCRATCH_DIR"
 init_repo_if_needed "$SCRATCH_DIR"

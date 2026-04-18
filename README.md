@@ -88,7 +88,7 @@ bash tests/parity_test.sh   # launch-flow preservation
 - `git` failure aborts before launch
 - `--no-launch` and normal `oc` invocation behavior
 
-`parity_test.sh` no longer asserts old alias parity. It now verifies that the create/`cd`/failure-path launch flow remains preserved after adding repo bootstrap.
+`parity_test.sh` verifies launch-flow preservation: `cds --no-launch` still creates the dated dir, `cd`s into it, and returns an equivalent exit code on both the happy path and a read-only-parent failure path after the repo bootstrap change.
 
 If `shellcheck` is installed, `cds_test.sh` also lints `cds` and `install.sh`.
 
